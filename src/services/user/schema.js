@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const { Schema, model } = mongoose;
 
@@ -21,6 +22,7 @@ const UserSchema = new Schema({
   role: {
     type: String,
     required: true,
+    enum: ["Host", "Guest", "Admin"],
   },
   googleId: {
     type: String,
@@ -51,6 +53,17 @@ UserSchema.methods.toJSON = function () {
   delete userObject.refreshToken;
 
   return userObject;
+};
+
+UserSchema.statics.checkCredentials = async function (email, plainPW) {
+  const user = await this.findOne({ email });
+  if (user) {
+    const isMatch = await bcrypt.compare(plainPW, user.password);
+    if (isMatch) return user;
+    else return null;
+  } else {
+    return null;
+  }
 };
 
 export default model("User", UserSchema);
